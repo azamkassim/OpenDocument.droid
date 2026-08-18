@@ -413,7 +413,9 @@ constructor(context: Context, attributeSet: AttributeSet?) :
         evaluateJavascript("document.body ? document.body.innerText : ''") { jsonValue ->
             val text = runCatching {
                 org.json.JSONTokener(jsonValue).nextValue() as? String
-            }.getOrNull().orEmpty()
+            }
+                .getOrNull()
+                .orEmpty()
             callback(text)
         }
     }
