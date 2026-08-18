@@ -30,6 +30,7 @@ import app.opendocument.droid.background.DocumentRequest
 import app.opendocument.droid.background.FileCache
 import app.opendocument.droid.background.IdentifiedFile
 import app.opendocument.droid.background.LoadedDocument
+import app.opendocument.droid.background.LocalAiClient
 import app.opendocument.droid.background.NightModeSetting
 import app.opendocument.droid.background.PaginationSetting
 import app.opendocument.droid.background.StreamUtil
@@ -91,6 +92,8 @@ class DocumentFragment : Fragment(), DocumentLoader.Listener {
     private lateinit var tabLayout: TabLayout
 
     private lateinit var documentLoader: DocumentLoader
+
+    private val localAiClient = LocalAiClient()
 
     /** Survives a configuration change, so the document and any unsaved edits outlive it. */
     class DocumentViewModel : ViewModel() {
@@ -550,6 +553,11 @@ class DocumentFragment : Fragment(), DocumentLoader.Listener {
         // is how it is displayed, not what else can be done to it
         val unfolding =
             listOfNotNull(
+                DocumentActions.Action(
+                    DocumentActions.ACTION_SEARCH,
+                    R.string.menu_search,
+                    R.drawable.ic_search,
+                ),
                 night,
                 darkening,
                 margins,
@@ -588,12 +596,86 @@ class DocumentFragment : Fragment(), DocumentLoader.Listener {
 
         actions.setActions(
             DocumentActions.Action(
-                DocumentActions.ACTION_SEARCH,
-                R.string.menu_search,
-                R.drawable.ic_search,
+                DocumentActions.ACTION_AI_ASSISTANT,
+                R.string.menu_ai_assistant,
+                R.drawable.ic_auto_awesome,
             ),
             unfolding,
         )
+    }
+
+    fun showAiAssistant() {
+        val currentPage = pageView ?: return
+        currentPage.requestPlainText { text ->
+            if (!isAdded) return@requestPlainText
+            if (text.isBlank()) {
+                Toast.makeText(requireContext(), R.string.ai_no_text, Toast.LENGTH_LONG).show()
+                return@requestPlainText
+            }
+
+            val tasks = resources.getStringArray(R.array.ai_tasks)
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.ai_dialog_title)
+                .setItems(tasks) { _, which ->
+                    if (which == tasks.lastIndex) askCustomAiQuestion(text)
+                    else runAi(text, resources.getStringArray(R.array.ai_prompts)[which])
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+    }
+
+    private fun askCustomAiQuestion(documentText: String) {
+        val input = EditText(requireContext())
+        input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        input.hint = getString(R.string.ai_question_hint)
+
+        val dialog =
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.ai_ask_title)
+                .setView(input)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.ai_ask_button, null)
+                .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val question = input.text.toString().trim()
+                if (question.isNotEmpty()) {
+                    dialog.dismiss()
+                    runAi(documentText, question)
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun runAi(documentText: String, instruction: String) {
+        val waiting =
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.ai_dialog_title)
+                .setMessage(R.string.ai_thinking)
+                .setCancelable(false)
+                .create()
+        waiting.show()
+
+        localAiClient.ask(documentText, instruction) { result ->
+            waiting.dismiss()
+            if (!isAdded) return@ask
+
+            val message =
+                when (result) {
+                    is LocalAiClient.Result.Success -> result.answer
+                    is LocalAiClient.Result.Failure -> result.message
+                }
+            AlertDialog.Builder(requireContext())
+                .setTitle(
+                    if (result is LocalAiClient.Result.Success) R.string.ai_result_title
+                    else R.string.ai_error_title
+                )
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+        }
     }
 
     /**
