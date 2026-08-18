@@ -22,7 +22,7 @@ class LocalAiClient(
         Thread {
                 val result = runCatching { request(documentText, instruction) }
                     .getOrElse { error ->
-                        Failure(
+                        Result.Failure(
                             if (error is IOException) {
                                 "AI offline belum berjalan. Buka Termux dan jalankan enjin AI, " +
                                     "kemudian cuba semula."
@@ -83,7 +83,7 @@ class LocalAiClient(
         connection.disconnect()
 
         if (status !in 200..299) {
-            return Failure("Enjin AI memberi ralat $status. Cuba mulakan semula enjin di Termux.")
+            return Result.Failure("Enjin AI memberi ralat $status. Cuba mulakan semula enjin di Termux.")
         }
 
         val answer =
@@ -94,7 +94,7 @@ class LocalAiClient(
                 .getString("content")
                 .trim()
 
-        return if (answer.isEmpty()) Failure("AI tidak menghasilkan jawapan.") else Success(answer)
+        return if (answer.isEmpty()) Result.Failure("AI tidak menghasilkan jawapan.") else Result.Success(answer)
     }
 
     companion object {
