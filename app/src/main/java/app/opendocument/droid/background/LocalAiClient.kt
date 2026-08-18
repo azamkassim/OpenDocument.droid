@@ -9,9 +9,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Talks only to the OpenAI-compatible model server running locally in Termux. */
-class LocalAiClient(
-    private val endpoint: String = "http://localhost:8081/v1/chat/completions",
-) {
+class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/chat/completions") {
     sealed interface Result {
         data class Success(val answer: String) : Result
 
@@ -20,20 +18,22 @@ class LocalAiClient(
 
     fun ask(documentText: String, instruction: String, callback: (Result) -> Unit) {
         Thread {
-                val result = runCatching { request(documentText, instruction) }
-                    .getOrElse { error ->
-                        Result.Failure(
-                            if (error is IOException) {
-                                "AI offline belum berjalan. Buka Termux dan jalankan enjin AI, " +
-                                    "kemudian cuba semula."
-                            } else {
-                                error.message ?: "AI tidak dapat memproses dokumen ini."
-                            }
-                        )
-                    }
-
-                Handler(Looper.getMainLooper()).post { callback(result) }
+            val result = runCatching {
+                request(documentText, instruction)
             }
+                .getOrElse { error ->
+                    Result.Failure(
+                        if (error is IOException) {
+                            "AI offline belum berjalan. Buka Termux dan jalankan enjin AI, " +
+                                "kemudian cuba semula."
+                        } else {
+                            error.message ?: "AI tidak dapat memproses dokumen ini."
+                        }
+                    )
+                }
+
+            Handler(Looper.getMainLooper()).post { callback(result) }
+        }
             .start()
     }
 
@@ -79,11 +79,14 @@ class LocalAiClient(
         val status = connection.responseCode
         val responseStream =
             if (status in 200..299) connection.inputStream else connection.errorStream
-        val response = responseStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+        val response =
+            responseStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
         connection.disconnect()
 
         if (status !in 200..299) {
-            return Result.Failure("Enjin AI memberi ralat $status. Cuba mulakan semula enjin di Termux.")
+            return Result.Failure(
+                "Enjin AI memberi ralat $status. Cuba mulakan semula enjin di Termux."
+            )
         }
 
         val answer =
@@ -94,7 +97,8 @@ class LocalAiClient(
                 .getString("content")
                 .trim()
 
-        return if (answer.isEmpty()) Result.Failure("AI tidak menghasilkan jawapan.") else Result.Success(answer)
+        return if (answer.isEmpty()) Result.Failure("AI tidak menghasilkan jawapan.")
+        else Result.Success(answer)
     }
 
     companion object {

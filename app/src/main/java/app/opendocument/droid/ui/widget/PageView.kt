@@ -411,10 +411,9 @@ constructor(context: Context, attributeSet: AttributeSet?) :
     /** Returns the text visible in the rendered document without exposing its file elsewhere. */
     fun requestPlainText(callback: (String) -> Unit) {
         evaluateJavascript("document.body ? document.body.innerText : ''") { jsonValue ->
-            val text =
-                runCatching { org.json.JSONTokener(jsonValue).nextValue() as? String }
-                    .getOrNull()
-                    .orEmpty()
+            val text = runCatching {
+                org.json.JSONTokener(jsonValue).nextValue() as? String
+            }.getOrNull().orEmpty()
             callback(text)
         }
     }
