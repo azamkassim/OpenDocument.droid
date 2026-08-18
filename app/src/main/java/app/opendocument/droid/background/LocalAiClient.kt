@@ -71,6 +71,7 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
                 .put("model", "local-model")
                 .put("messages", messages)
                 .put("temperature", 0.2)
+                .put("max_tokens", 192)
                 .put("stream", false)
                 .toString()
 
@@ -104,6 +105,6 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
     companion object {
         private const val CONNECT_TIMEOUT_MS = 5_000
         private const val READ_TIMEOUT_MS = 300_000
-        private const val MAX_DOCUMENT_CHARS = 8_000
+        private const val MAX_DOCUMENT_CHARS = 3_000
     }
 }
