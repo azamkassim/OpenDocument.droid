@@ -74,13 +74,14 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
             val chunks = DocumentTextChunker.chunk(current, MAX_CHUNK_CHARS)
             chunks.forEachIndexed { index, chunk ->
                 when (
-                    val result = request(
-                        chunk,
-                        "Condense this extracted document evidence for the user's instruction: " +
-                            "$instruction\nKeep only supported facts, names, dates, figures, risks, " +
-                            "obligations and action items. This is evidence block ${index + 1} of " +
-                            "${chunks.size}.",
-                    )
+                    val result =
+                        request(
+                            chunk,
+                            "Condense this extracted document evidence for the user's instruction: " +
+                                "$instruction\nKeep only supported facts, names, dates, figures, risks, " +
+                                "obligations and action items. This is evidence block ${index + 1} of " +
+                                "${chunks.size}.",
+                        )
                 ) {
                     is Result.Success -> reduced += result.answer
                     is Result.Failure -> return result
