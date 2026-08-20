@@ -480,6 +480,11 @@ class MainActivity : AppCompatActivity() {
         val documentFragment = this.documentFragment
 
         when (action) {
+            DocumentActions.ACTION_AI_ASSISTANT -> {
+                documentFragment?.showAiAssistant()
+                analyticsManager.report("menu_ai_assistant")
+            }
+
             DocumentActions.ACTION_SEARCH -> {
                 val findActionModeCallback = FindActionModeCallback(this)
                 documentFragment?.pageView?.let { findActionModeCallback.setWebView(it) }

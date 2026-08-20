@@ -408,6 +408,18 @@ constructor(context: Context, attributeSet: AttributeSet?) :
         loadUrl("${JAVASCRIPT_SCHEME}window.$BRIDGE_NAME.sendHtml(odr.generateDiff());")
     }
 
+    /** Returns the text visible in the rendered document without exposing its file elsewhere. */
+    fun requestPlainText(callback: (String) -> Unit) {
+        evaluateJavascript("document.body ? document.body.innerText : ''") { jsonValue ->
+            val text = runCatching {
+                org.json.JSONTokener(jsonValue).nextValue() as? String
+            }
+                .getOrNull()
+                .orEmpty()
+            callback(text)
+        }
+    }
+
     @JavascriptInterface
     @Keep
     fun sendHtml(htmlDiff: String) {

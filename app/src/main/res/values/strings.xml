@@ -77,6 +77,28 @@
     <string name="landing_open_file">Open a file</string>
     <string name="document_actions_more">More actions</string>
     <string name="document_actions_close">Close actions</string>
+    <string name="menu_ai_assistant">AI document assistant</string>
+    <string name="ai_dialog_title">Offline AI</string>
+    <string name="ai_result_title">AI answer</string>
+    <string name="ai_error_title">AI unavailable</string>
+    <string name="ai_thinking">Reading and analysing this document…</string>
+    <string name="ai_no_text">No readable text was found on this page.</string>
+    <string name="ai_ask_title">Ask this document</string>
+    <string name="ai_question_hint">What do you want to know?</string>
+    <string name="ai_ask_button">Ask</string>
+    <string-array name="ai_tasks">
+        <item>Summarise this document</item>
+        <item>Extract key points</item>
+        <item>Find risks and action items</item>
+        <item>Explain in simple language</item>
+        <item>Ask a question…</item>
+    </string-array>
+    <string-array name="ai_prompts">
+        <item>Summarise this document concisely. Preserve important names, dates, and figures.</item>
+        <item>Extract the key points from this document as a clear bullet list.</item>
+        <item>Identify risks, obligations, deadlines, and action items stated in this document. Do not invent any.</item>
+        <item>Explain this document in simple language while preserving its meaning and important figures.</item>
+    </string-array>
     <string name="tts_status_reading">Reading…</string>
     <string name="tts_status_initializing">Initializing TTS…</string>
     <string name="tts_status_ready">Ready!</string>
