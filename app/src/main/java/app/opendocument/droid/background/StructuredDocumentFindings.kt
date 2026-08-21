@@ -31,19 +31,19 @@ data class StructuredDocumentFindings(val findings: List<DocumentFinding>) {
                 if (entries.isEmpty()) return@mapNotNull null
 
                 buildString {
-                        append("## ")
-                        append(category.heading)
-                        append('\n')
-                        entries.forEach { finding ->
-                            append("- ")
-                            append(finding.text)
-                            if (finding.sources.isNotEmpty()) {
-                                append(' ')
-                                append(finding.sources.joinToString(" "))
-                            }
-                            append('\n')
+                    append("## ")
+                    append(category.heading)
+                    append('\n')
+                    entries.forEach { finding ->
+                        append("- ")
+                        append(finding.text)
+                        if (finding.sources.isNotEmpty()) {
+                            append(' ')
+                            append(finding.sources.joinToString(" "))
                         }
+                        append('\n')
                     }
+                }
                     .trimEnd()
             }
             .joinToString("\n\n")
@@ -54,7 +54,8 @@ object StructuredDocumentFindingsParser {
 
     fun parse(text: String): StructuredDocumentFindings {
         val findings =
-            text.lineSequence()
+            text
+                .lineSequence()
                 .mapNotNull { line ->
                     parseLine(line)
                 }
