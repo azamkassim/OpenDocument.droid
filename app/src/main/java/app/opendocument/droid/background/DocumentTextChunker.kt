@@ -2,16 +2,28 @@ package app.opendocument.droid.background
 
 /** Splits rendered document text into bounded chunks without silently dropping the tail. */
 object DocumentTextChunker {
-    fun chunk(text: String, maxChars: Int, overlapChars: Int = 0): List<String> {
+    data class TextChunk(
+        val index: Int,
+        val startOffset: Int,
+        val endOffsetExclusive: Int,
+        val text: String,
+    ) {
+        val sourceLabel: String
+            get() = "Chunk ${index + 1} · chars $startOffset-${endOffsetExclusive - 1}"
+    }
+
+    fun chunk(text: String, maxChars: Int, overlapChars: Int = 0): List<String> =
+        chunkWithOffsets(text, maxChars, overlapChars).map { it.text }
+
+    fun chunkWithOffsets(text: String, maxChars: Int, overlapChars: Int = 0): List<TextChunk> {
         require(maxChars > 0) { "maxChars must be positive" }
         require(overlapChars >= 0) { "overlapChars must not be negative" }
         require(overlapChars < maxChars) { "overlapChars must be smaller than maxChars" }
 
         val normalized = text.trim()
         if (normalized.isEmpty()) return emptyList()
-        if (normalized.length <= maxChars) return listOf(normalized)
 
-        val chunks = mutableListOf<String>()
+        val chunks = mutableListOf<TextChunk>()
         var start = 0
 
         while (start < normalized.length) {
@@ -26,8 +38,16 @@ object DocumentTextChunker {
                 if (candidate > start + maxChars / 2) end = candidate
             }
 
-            val chunk = normalized.substring(start, end).trim()
-            if (chunk.isNotEmpty()) chunks += chunk
+            val chunkText = normalized.substring(start, end).trim()
+            if (chunkText.isNotEmpty()) {
+                chunks +=
+                    TextChunk(
+                        index = chunks.size,
+                        startOffset = start,
+                        endOffsetExclusive = end,
+                        text = chunkText,
+                    )
+            }
             if (end >= normalized.length) break
 
             start = maxOf(end - overlapChars, start + 1)
