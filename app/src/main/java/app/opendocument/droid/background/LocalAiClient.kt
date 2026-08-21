@@ -60,20 +60,27 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
             val sourceTag = sourceTag(chunk)
             val chunkInstruction =
                 "$instruction\n\n" +
-                    "Extract only evidence from this source block: $sourceTag. Preserve names, " +
-                    "dates, figures, obligations and headings when present. Do not invent facts."
+                    "Extract only supported findings from this source block: $sourceTag. " +
+                    "Return one finding per line using exactly: CATEGORY | $sourceTag | finding. " +
+                    "CATEGORY must be SUMMARY, RISK, OBLIGATION, DATE, FIGURE, or ACTION_ITEM. " +
+                    "Preserve names, dates, figures and obligations. Do not invent facts or sources."
             when (val result = request(chunk.text, chunkInstruction)) {
-                is Result.Success -> evidence += "$sourceTag\n${result.answer}"
+                is Result.Success -> evidence += result.answer
                 is Result.Failure -> return result
             }
         }
 
-        val condensed = condenseEvidence(evidence.joinToString("\n\n"), instruction)
+        val condensed = condenseEvidence(evidence.joinToString("\n"), instruction)
         if (condensed is Result.Failure) return condensed
 
+        val condensedText = (condensed as Result.Success).answer
+        val structured = StructuredDocumentFindingsParser.parse(condensedText)
+        val finalEvidence = if (structured.isEmpty()) condensedText else structured.formatForModel()
+
         return request(
-            (condensed as Result.Success).answer,
-            "$instruction\n\nUse only the extracted evidence below to produce one final answer. " +
+            finalEvidence,
+            "$instruction\n\nUse only the structured extracted evidence below to produce one final answer. " +
+                "Cover relevant summary, risks, obligations, dates, figures, and action items. " +
                 "Cite the relevant [SOURCE ...] marker after each supported claim or bullet. " +
                 "Never invent page numbers or source markers, and do not add unsupported facts.",
         )
@@ -91,18 +98,18 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
                     val result =
                         request(
                             chunk,
-                            "Condense this extracted document evidence for the user's instruction: " +
-                                "$instruction\nKeep only supported facts, names, dates, figures, risks, " +
-                                "obligations and action items. Preserve every [SOURCE ...] marker " +
-                                "verbatim beside the evidence it supports. This is evidence block " +
-                                "${index + 1} of ${chunks.size}.",
+                            "Condense these structured findings for the user's instruction: " +
+                                "$instruction\nKeep only supported findings. Preserve the line format " +
+                                "CATEGORY | [SOURCE ...] | finding and every source marker verbatim. " +
+                                "Allowed categories: SUMMARY, RISK, OBLIGATION, DATE, FIGURE, " +
+                                "ACTION_ITEM. This is evidence block ${index + 1} of ${chunks.size}.",
                         )
                 ) {
                     is Result.Success -> reduced += result.answer
                     is Result.Failure -> return result
                 }
             }
-            current = reduced.joinToString("\n\n")
+            current = reduced.joinToString("\n")
         }
 
         return if (current.length <= MAX_CHUNK_CHARS) Result.Success(current)
