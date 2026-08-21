@@ -38,19 +38,32 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
     }
 
     private fun analyseDocument(documentText: String, instruction: String): Result {
-        val chunks = DocumentTextChunker.chunk(documentText, MAX_CHUNK_CHARS, CHUNK_OVERLAP_CHARS)
+        val chunks =
+            DocumentTextChunker.chunkWithOffsets(
+                documentText,
+                MAX_CHUNK_CHARS,
+                CHUNK_OVERLAP_CHARS,
+            )
         if (chunks.isEmpty()) return Result.Failure("AI tidak menemui teks untuk dianalisis.")
-        if (chunks.size == 1) return request(chunks.single(), instruction)
+
+        if (chunks.size == 1) {
+            val chunk = chunks.single()
+            return request(
+                chunk.text,
+                "$instruction\n\nSource for this document text: ${sourceTag(chunk)}. " +
+                    "Cite this source marker for supported claims.",
+            )
+        }
 
         val evidence = mutableListOf<String>()
-        chunks.forEachIndexed { index, chunk ->
+        chunks.forEach { chunk ->
+            val sourceTag = sourceTag(chunk)
             val chunkInstruction =
                 "$instruction\n\n" +
-                    "This is document chunk ${index + 1} of ${chunks.size}. Extract only evidence " +
-                    "from this chunk that is relevant to the instruction. Preserve names, dates, " +
-                    "figures, obligations and page-like headings when present. Do not invent facts."
-            when (val result = request(chunk, chunkInstruction)) {
-                is Result.Success -> evidence += "Chunk ${index + 1}: ${result.answer}"
+                    "Extract only evidence from this source block: $sourceTag. Preserve names, " +
+                    "dates, figures, obligations and headings when present. Do not invent facts."
+            when (val result = request(chunk.text, chunkInstruction)) {
+                is Result.Success -> evidence += "$sourceTag\n${result.answer}"
                 is Result.Failure -> return result
             }
         }
@@ -60,8 +73,9 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
 
         return request(
             (condensed as Result.Success).answer,
-            "$instruction\n\nUse the extracted evidence below to produce one final answer. " +
-                "Do not add facts that are absent from the evidence.",
+            "$instruction\n\nUse only the extracted evidence below to produce one final answer. " +
+                "Cite the relevant [SOURCE ...] marker after each supported claim or bullet. " +
+                "Never invent page numbers or source markers, and do not add unsupported facts.",
         )
     }
 
@@ -79,8 +93,9 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
                             chunk,
                             "Condense this extracted document evidence for the user's instruction: " +
                                 "$instruction\nKeep only supported facts, names, dates, figures, risks, " +
-                                "obligations and action items. This is evidence block ${index + 1} of " +
-                                "${chunks.size}.",
+                                "obligations and action items. Preserve every [SOURCE ...] marker " +
+                                "verbatim beside the evidence it supports. This is evidence block " +
+                                "${index + 1} of ${chunks.size}.",
                         )
                 ) {
                     is Result.Success -> reduced += result.answer
@@ -93,6 +108,9 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
         return if (current.length <= MAX_CHUNK_CHARS) Result.Success(current)
         else Result.Failure("Dokumen terlalu panjang untuk diringkaskan dengan selamat.")
     }
+
+    private fun sourceTag(chunk: DocumentTextChunker.TextChunk): String =
+        "[SOURCE ${chunk.sourceLabel}]"
 
     private fun request(documentText: String, instruction: String): Result {
         val connection = URL(endpoint).openConnection() as HttpURLConnection
