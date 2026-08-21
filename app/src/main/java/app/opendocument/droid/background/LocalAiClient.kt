@@ -18,7 +18,9 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
 
     fun ask(documentText: String, instruction: String, callback: (Result) -> Unit) {
         Thread {
-            val result = runCatching { analyseDocument(documentText, instruction) }
+            val result = runCatching {
+                analyseDocument(documentText, instruction)
+            }
                 .getOrElse { error ->
                     Result.Failure(
                         if (error is IOException) {
@@ -31,7 +33,8 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
                 }
 
             Handler(Looper.getMainLooper()).post { callback(result) }
-        }.start()
+        }
+            .start()
     }
 
     private fun analyseDocument(documentText: String, instruction: String): Result {
@@ -156,7 +159,8 @@ class LocalAiClient(private val endpoint: String = "http://localhost:8081/v1/cha
         val status = connection.responseCode
         val responseStream =
             if (status in 200..299) connection.inputStream else connection.errorStream
-        val response = responseStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+        val response =
+            responseStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
         connection.disconnect()
 
         if (status !in 200..299) {
