@@ -6,12 +6,12 @@ enum class FindingCategory(val wireName: String, val heading: String) {
     OBLIGATION("OBLIGATION", "Obligations"),
     DATE("DATE", "Dates"),
     FIGURE("FIGURE", "Figures"),
-    ACTION_ITEM("ACTION_ITEM", "Action items"),
-    ;
+    ACTION_ITEM("ACTION_ITEM", "Action items");
 
     companion object {
-        fun fromWireName(value: String): FindingCategory? =
-            entries.firstOrNull { it.wireName == value.trim().uppercase() }
+        fun fromWireName(value: String): FindingCategory? = entries.firstOrNull {
+            it.wireName == value.trim().uppercase()
+        }
     }
 }
 
@@ -25,25 +25,28 @@ data class StructuredDocumentFindings(val findings: List<DocumentFinding>) {
     fun isEmpty(): Boolean = findings.isEmpty()
 
     fun formatForModel(): String =
-        FindingCategory.entries.mapNotNull { category ->
-            val entries = findings.filter { it.category == category }
-            if (entries.isEmpty()) return@mapNotNull null
+        FindingCategory.entries
+            .mapNotNull { category ->
+                val entries = findings.filter { it.category == category }
+                if (entries.isEmpty()) return@mapNotNull null
 
-            buildString {
-                append("## ")
-                append(category.heading)
-                append('\n')
-                entries.forEach { finding ->
-                    append("- ")
-                    append(finding.text)
-                    if (finding.sources.isNotEmpty()) {
-                        append(' ')
-                        append(finding.sources.joinToString(" "))
+                buildString {
+                        append("## ")
+                        append(category.heading)
+                        append('\n')
+                        entries.forEach { finding ->
+                            append("- ")
+                            append(finding.text)
+                            if (finding.sources.isNotEmpty()) {
+                                append(' ')
+                                append(finding.sources.joinToString(" "))
+                            }
+                            append('\n')
+                        }
                     }
-                    append('\n')
-                }
-            }.trimEnd()
-        }.joinToString("\n\n")
+                    .trimEnd()
+            }
+            .joinToString("\n\n")
 }
 
 object StructuredDocumentFindingsParser {
@@ -51,9 +54,11 @@ object StructuredDocumentFindingsParser {
 
     fun parse(text: String): StructuredDocumentFindings {
         val findings =
-            text.lineSequence().mapNotNull { line ->
-                parseLine(line)
-            }.toList()
+            text.lineSequence()
+                .mapNotNull { line ->
+                    parseLine(line)
+                }
+                .toList()
         return StructuredDocumentFindings(findings)
     }
 
