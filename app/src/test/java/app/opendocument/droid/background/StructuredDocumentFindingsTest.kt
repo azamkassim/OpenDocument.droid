@@ -16,7 +16,8 @@ class StructuredDocumentFindingsTest {
                 DATE | [SOURCE chars 300-399] | Maturity is 31 December 2030.
                 FIGURE | [SOURCE chars 400-499] | Facility amount is RM40 million.
                 ACTION_ITEM | [SOURCE chars 500-599] | Obtain board approval.
-                """.trimIndent()
+                """
+                    .trimIndent()
             )
 
         assertEquals(6, parsed.findings.size)
@@ -32,7 +33,8 @@ class StructuredDocumentFindingsTest {
                 UNKNOWN | [SOURCE chars 0-99] | Ignore me.
                 RISK | no source | Ignore me too.
                 FIGURE | [SOURCE chars 100-199] | RM10 million.
-                """.trimIndent()
+                """
+                    .trimIndent()
             )
 
         assertEquals(1, parsed.findings.size)
@@ -47,7 +49,8 @@ class StructuredDocumentFindingsTest {
                 RISK | [SOURCE chars 10-20] | Customer concentration.
                 SUMMARY | [SOURCE chars 0-9] | Financing proposal.
                 RISK | [SOURCE chars 21-30] | Construction delay.
-                """.trimIndent()
+                """
+                    .trimIndent()
             )
 
         val formatted = parsed.formatForModel()
