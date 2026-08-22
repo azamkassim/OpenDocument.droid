@@ -3,9 +3,8 @@ package app.opendocument.droid.intelligence
 /**
  * Lightweight coordinator that keeps common intelligence actions responsive.
  *
- * It caps hot-path text size, reuses recent results, and never mutates the original
- * document text. The caller remains responsible for executing this suspend function
- * away from the Android main thread.
+ * It samples large documents for fast actions, reuses recent results, and never mutates the original document
+ * text. The caller remains responsible for executing this suspend function away from the Android main thread.
  */
 class FastDocumentIntelligenceCoordinator(
     private val engine: DocumentIntelligenceEngine,
@@ -19,8 +18,7 @@ class FastDocumentIntelligenceCoordinator(
         }
 
     override suspend fun execute(request: DocumentIntelligenceRequest): DocumentIntelligenceResult {
-        val prepared = prepare(request)
-        val key = prepared.cacheKey()
+        val key = request.cacheKey()
 
         if (policy.cacheDerivedResults) {
             synchronized(cache) {
@@ -28,6 +26,7 @@ class FastDocumentIntelligenceCoordinator(
             }
         }
 
+        val prepared = prepare(request)
         val result = engine.execute(prepared)
         val bounded = result.limit(policy)
 
@@ -45,12 +44,21 @@ class FastDocumentIntelligenceCoordinator(
         }
     }
 
+    fun prewarm(request: DocumentIntelligenceRequest): DocumentIntelligenceRequest = prepare(request)
+
     private fun prepare(request: DocumentIntelligenceRequest): DocumentIntelligenceRequest {
         if (!isFastPath(request.action) || request.documentText.length <= policy.fastPathMaxChars) {
             return request
         }
 
-        return request.copy(documentText = request.documentText.take(policy.fastPathMaxChars))
+        return request.copy(
+            documentText =
+                DocumentTextWindowing.representativeSample(
+                    text = request.documentText,
+                    maxChars = policy.fastPathMaxChars,
+                    windows = policy.sampleWindows,
+                ),
+        )
     }
 
     private fun isFastPath(action: DocumentAction): Boolean =
