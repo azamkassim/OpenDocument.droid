@@ -127,6 +127,10 @@ LibreOffice / Collabora renderer-editor
 - configurable policy/rule adapters;
 - user-created extraction templates.
 
+## Validation gate
+
+Before this migration is considered merge-ready, the same branch head must pass both the repository `format` and `build_test` workflows. The formatter output must be committed, unit tests must compile and pass, and no renderer replacement should be merged until the LibreOffice/Collabora source workspace is writable and reproducibly buildable.
+
 ## Non-goals
 
 - Do not rebuild LibreOffice rendering/editing.
