@@ -1,34 +1,19 @@
-name: spotless_autofix
+name: spotless_preview
 
 on:
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  autofix:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+  preview:
     runs-on: ubuntu-24.04
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.head_ref }}
       - uses: actions/setup-java@v5.7.0
         with:
           distribution: zulu
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v6
-      - name: Apply Spotless
-        run: ./gradlew spotlessApply
-      - name: Commit formatter changes
-        run: |
-          if git diff --quiet; then
-            echo "No formatting changes needed."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/app/opendocument/droid/intelligence app/src/test/java/app/opendocument/droid/intelligence
-          git commit -m "Apply Spotless formatting"
-          git push origin HEAD:${{ github.head_ref }}
+      - name: Verify Spotless formatting
+        run: ./gradlew spotlessCheck
