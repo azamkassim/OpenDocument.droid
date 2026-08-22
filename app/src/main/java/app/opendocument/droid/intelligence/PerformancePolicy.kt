@@ -3,12 +3,15 @@ package app.opendocument.droid.intelligence
 /**
  * Performance guardrails for document intelligence.
  *
- * Common actions should feel instant on mobile, while heavier work must never
- * block document rendering, scrolling, editing, selection, or save.
+ * Common actions should feel instant on mobile, while heavier work must never block document rendering,
+ * scrolling, editing, selection, or save.
  */
 data class PerformancePolicy(
     val fastPathMaxChars: Int = 12_000,
     val previewMaxChars: Int = 2_000,
+    val sampleWindows: Int = 3,
+    val chunkChars: Int = 8_000,
+    val chunkOverlapChars: Int = 400,
     val maxEvidenceItems: Int = 12,
     val maxExtractedFields: Int = 64,
     val maxCachedResults: Int = 24,
@@ -25,6 +28,9 @@ data class PerformancePolicy(
     init {
         require(fastPathMaxChars > 0)
         require(previewMaxChars in 1..fastPathMaxChars)
+        require(sampleWindows in 1..8)
+        require(chunkChars >= fastPathMaxChars / 2)
+        require(chunkOverlapChars in 0 until chunkChars)
         require(maxEvidenceItems > 0)
         require(maxExtractedFields > 0)
         require(maxCachedResults > 0)
@@ -40,8 +46,8 @@ object NexusDefaultPerformancePolicy {
 }
 
 /**
- * Fast, non-cryptographic fingerprint for in-memory result caching. It samples long
- * documents so cache lookup stays cheap. Never use this as a security hash.
+ * Fast, non-cryptographic fingerprint for in-memory result caching. It samples long documents so cache lookup
+ * stays cheap. Never use this as a security hash.
  */
 fun fastDocumentFingerprint(text: String): Int {
     var hash = 17
