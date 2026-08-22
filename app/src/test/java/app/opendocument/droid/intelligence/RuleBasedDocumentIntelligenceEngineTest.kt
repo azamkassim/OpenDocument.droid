@@ -17,8 +17,9 @@ class RuleBasedDocumentIntelligenceEngineTest {
                 DocumentIntelligenceRequest(
                     action = DocumentAction.IDENTIFY_DOCUMENT,
                     documentId = "financials",
-                    documentText = "Revenue increased. Profit before tax improved. Balance sheet remains stable.",
-                ),
+                    documentText =
+                        "Revenue increased. Profit before tax improved. Balance sheet remains stable.",
+                )
             )
         }
 
@@ -34,7 +35,7 @@ class RuleBasedDocumentIntelligenceEngineTest {
                     action = DocumentAction.SUMMARISE,
                     documentId = "empty",
                     documentText = "   ",
-                ),
+                )
             )
         }
 
@@ -51,7 +52,7 @@ class RuleBasedDocumentIntelligenceEngineTest {
                     action = DocumentAction.PREPARE_CAR_FACTS,
                     documentId = "credit",
                     documentText = "Facility amount RM40 million.",
-                ),
+                )
             )
         }
 
@@ -68,7 +69,7 @@ class RuleBasedDocumentIntelligenceEngineTest {
                 override fun resumeWith(result: Result<T>) {
                     outcome = result
                 }
-            },
+            }
         )
         return checkNotNull(outcome).getOrThrow()
     }

@@ -3,9 +3,9 @@ package app.opendocument.droid.intelligence
 /**
  * Engine-neutral contract for the NEXUS Document Intelligence layer.
  *
- * The office renderer/editor (LibreOffice/Collabora) is intentionally kept
- * separate from analysis so this layer can be reused across Android office
- * engines without coupling banking logic to the renderer.
+ * The office renderer/editor (LibreOffice/Collabora) is intentionally kept separate from analysis
+ * so this layer can be reused across Android office engines without coupling banking logic to the
+ * renderer.
  */
 interface DocumentIntelligenceEngine {
     suspend fun execute(request: DocumentIntelligenceRequest): DocumentIntelligenceResult
@@ -45,7 +45,11 @@ data class ExtractedField(
     val source: EvidenceRef? = null,
 )
 
-enum class Confidence { LOW, MEDIUM, HIGH }
+enum class Confidence {
+    LOW,
+    MEDIUM,
+    HIGH,
+}
 
 enum class DocumentAction {
     SUMMARISE,

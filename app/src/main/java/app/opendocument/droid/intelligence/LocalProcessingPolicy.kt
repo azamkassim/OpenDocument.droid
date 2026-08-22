@@ -3,9 +3,8 @@ package app.opendocument.droid.intelligence
 /**
  * Privacy guardrails for document intelligence.
  *
- * The default is deliberately local-only. Any future remote processing must be
- * explicitly enabled by a separate integration layer and must never be implied
- * by this core contract.
+ * The default is deliberately local-only. Any future remote processing must be explicitly enabled
+ * by a separate integration layer and must never be implied by this core contract.
  */
 data class LocalProcessingPolicy(
     val localOnly: Boolean = true,
